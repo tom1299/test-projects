@@ -29,11 +29,12 @@ func run() error {
 	}
 	defer tcp.Close()
 
-	go serve(udp)
-	return serveTCP(tcp)
+	go serveUDP(udp)
+	serveTCP(tcp)
+	return nil
 }
 
-func serve(conn net.PacketConn) {
+func serveUDP(conn net.PacketConn) {
 	buffer := make([]byte, 65507)
 	for {
 		_, addr, err := conn.ReadFrom(buffer)
@@ -41,26 +42,30 @@ func serve(conn net.PacketConn) {
 			if errors.Is(err, net.ErrClosed) {
 				return
 			}
-			log.Printf("read UDP request: %v", err)
+			log.Print("failed to read UDP request")
 			continue
 		}
 
 		response, err := authResponse()
 		if err != nil {
-			log.Printf("generate auth response: %v", err)
+			log.Print("failed to generate auth response")
 			continue
 		}
 		if _, err := conn.WriteTo(response, addr); err != nil {
-			log.Printf("send UDP response to %s: %v", addr, err)
+			log.Print("failed to send UDP response")
 		}
 	}
 }
 
-func serveTCP(listener net.Listener) error {
+func serveTCP(listener net.Listener) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			return fmt.Errorf("accept TCP connection: %w", err)
+			if errors.Is(err, net.ErrClosed) {
+				return
+			}
+			log.Print("failed to read TCP request")
+			continue
 		}
 		go handleTCP(conn)
 	}
@@ -73,17 +78,17 @@ func handleTCP(conn net.Conn) {
 	for scanner.Scan() {
 		response, err := authResponse()
 		if err != nil {
-			log.Printf("generate auth response: %v", err)
+			log.Print("failed to generate auth response")
 			return
 		}
 		response = append(response, '\n')
 		if _, err := conn.Write(response); err != nil {
-			log.Printf("send TCP response to %s: %v", conn.RemoteAddr(), err)
+			log.Print("failed to send TCP response")
 			return
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		log.Printf("read TCP request from %s: %v", conn.RemoteAddr(), err)
+		log.Print("failed to read TCP request")
 	}
 }
 

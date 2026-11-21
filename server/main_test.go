@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"net"
 	"testing"
 	"time"
@@ -18,7 +17,7 @@ func TestServeUDP(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		serve(listener)
+		serveUDP(listener)
 	}()
 	defer func() {
 		listener.Close()
@@ -57,13 +56,14 @@ func TestServeTCP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	done := make(chan error, 1)
-	go func() { done <- serveTCP(listener) }()
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		serveTCP(listener)
+	}()
 	defer func() {
 		listener.Close()
-		if err := <-done; !errors.Is(err, net.ErrClosed) {
-			t.Errorf("serveTCP returned %v, want closed listener error", err)
-		}
+		<-done
 	}()
 
 	client, err := net.Dial("tcp", listener.Addr().String())

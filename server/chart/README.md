@@ -11,6 +11,12 @@ helm install server ./server/chart \
   --set image.tag=<tag>
 ```
 
+Pushing a Git tag also builds and publishes the image as
+`ghcr.io/<owner>/<repository>:<tag>` using GitHub Actions. Image names are
+lowercased and tags are sanitized to meet Docker's naming rules. Ensure the
+cluster can pull the package; GitHub Container Registry packages are private by
+default.
+
 By default, the chart creates one replica and a `ClusterIP` Service exposing UDP
 port 6745 and TCP port 6746. Set `service.type` to `NodePort` or `LoadBalancer`
 to expose the Service outside the cluster. Mixed TCP/UDP LoadBalancer support

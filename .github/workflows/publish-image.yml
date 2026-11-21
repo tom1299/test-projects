@@ -3,7 +3,7 @@ name: Publish server image
 on:
   push:
     tags:
-      - "*"
+      - "server/v*"
 
 permissions:
   contents: read
@@ -22,8 +22,8 @@ jobs:
         id: metadata
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
-          tags: type=ref,event=tag
+          images: ghcr.io/${{ github.repository }}/server
+          tags: type=match,pattern=^server/(.*)$,group=1
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
